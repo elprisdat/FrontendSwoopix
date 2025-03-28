@@ -200,21 +200,3 @@ eas build -p android --profile preview
 # Build iOS IPA
 eas build -p ios --profile preview
 ```
-
-## 🤝 Kontribusi
-
-1. Fork repository
-2. Buat branch fitur (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
-5. Buat Pull Request
-
-## 📄 Lisensi
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 📞 Kontak
-
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
-
-Project Link: [https://github.com/username/FrontendSwoopix](https://github.com/username/FrontendSwoopix)
