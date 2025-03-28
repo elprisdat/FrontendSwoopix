@@ -8,13 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { globalStyles, colors } from '../../constants/styles';
 import { useAuth } from '../../context/AuthContext';
 import CustomAlert from '../common/CustomAlert';
-import { api, BASE_URL } from '../../../utils/api';
 
 type AlertType = 'success' | 'error' | 'warning' | 'info';
 
@@ -24,12 +22,8 @@ interface AlertConfig {
   type: AlertType;
 }
 
-interface LoginFormProps {
-  onLoginSuccess: (userData: any) => void;
-}
-
-export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
-  const [phone, setPhone] = useState('');
+export default function LoginForm() {
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState('');
@@ -42,27 +36,27 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!phone || !password) {
-      Alert.alert('Error', 'Mohon isi nomor telepon dan password');
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const response = await api.post('/login', {
-        phone,
-        password,
-      });
-
-      if (response.data.success) {
-        onLoginSuccess(response.data.data);
-      } else {
-        Alert.alert('Error', response.data.message || 'Login gagal');
+      setLoading(true);
+      
+      if (!phoneNumber || !password) {
+        setAlertConfig({
+          title: 'Data Tidak Lengkap',
+          message: 'Nomor telepon dan password harus diisi',
+          type: 'warning',
+        });
+        setShowAlert(true);
+        return;
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Terjadi kesalahan saat login';
-      Alert.alert('Error', errorMessage);
+
+      await login(phoneNumber, password);
+    } catch (err: any) {
+      setAlertConfig({
+        title: 'Login Gagal',
+        message: err.message || 'Terjadi kesalahan saat login',
+        type: 'error',
+      });
+      setShowAlert(true);
     } finally {
       setLoading(false);
     }
@@ -93,8 +87,8 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               focusedInput === 'phone' && globalStyles.inputFocused
             ]}
             placeholder="Nomor Telepon"
-            value={phone}
-            onChangeText={setPhone}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
             autoCapitalize="none"
             onFocus={() => setFocusedInput('phone')}
@@ -118,17 +112,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           />
 
           <TouchableOpacity
-            style={[globalStyles.button, loading && globalStyles.buttonDisabled]}
+            style={globalStyles.button}
             onPress={handleLogin}
             disabled={loading}
           >
-            <Text style={globalStyles.buttonText}>
-              {loading ? (
-                <ActivityIndicator color={colors.background} />
-              ) : (
-                'Login'
-              )}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color={colors.background} />
+            ) : (
+              <Text style={globalStyles.buttonText}>Login</Text>
+            )}
           </TouchableOpacity>
 
           <Link href="/register" asChild>

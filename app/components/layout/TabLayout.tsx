@@ -5,13 +5,47 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface TabLayoutProps {
   children: React.ReactNode;
-  activeTab: 'home' | 'menu' | 'orders' | 'profile';
+  activeTab: 'home' | 'menu' | 'orders' | 'profile' | 'stores';
+  showBackButton?: boolean;
+  handleBack?: () => void;
 }
 
-export default function TabLayout({ children, activeTab }: TabLayoutProps) {
+export default function TabLayout({ children, activeTab, showBackButton, handleBack }: TabLayoutProps) {
+  const getTitle = () => {
+    switch (activeTab) {
+      case 'home':
+        return 'Beranda';
+      case 'menu':
+        return 'Menu';
+      case 'orders':
+        return 'Pesanan';
+      case 'profile':
+        return 'Profil';
+      case 'stores':
+        return 'Toko';
+      default:
+        return '';
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {children}
+      {/* Header */}
+      {activeTab !== 'menu' && (
+        <View style={styles.header}>
+          {showBackButton && (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#000000" />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.title}>{getTitle()}</Text>
+        </View>
+      )}
+      
+      {/* Content */}
+      <View style={[styles.content, activeTab === 'menu' && styles.noHeader]}>
+        {children}
+      </View>
       
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
@@ -37,6 +71,18 @@ export default function TabLayout({ children, activeTab }: TabLayoutProps) {
             color={activeTab === 'menu' ? '#000000' : '#666666'} 
           />
           <Text style={[styles.navText, activeTab === 'menu' && styles.activeNavText]}>Menu</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.navItem, activeTab === 'stores' && styles.activeNavItem]}
+          onPress={() => router.push('/stores' as any)}
+        >
+          <Ionicons 
+            name={activeTab === 'stores' ? 'storefront' : 'storefront-outline'} 
+            size={24} 
+            color={activeTab === 'stores' ? '#000000' : '#666666'} 
+          />
+          <Text style={[styles.navText, activeTab === 'stores' && styles.activeNavText]}>Stores</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -114,5 +160,24 @@ const styles = StyleSheet.create({
   activeNavText: {
     color: '#000000',
     fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 16,
+  },
+  content: {
+    flex: 1,
+  },
+  noHeader: {
+    paddingTop: 0,
   },
 }); 

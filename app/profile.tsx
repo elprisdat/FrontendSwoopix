@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors, globalStyles } from './constants/styles';
@@ -52,6 +53,12 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'error' as 'success' | 'error' | 'warning' | 'info'
+  });
   
   // Fungsi untuk mengambil data
   const fetchData = async () => {
@@ -107,13 +114,26 @@ export default function ProfileScreen() {
 
   const confirmLogout = async () => {
     try {
-      const res = await authService.logout();
-      if (res.success) {
-        router.replace('/login');
+      const response = await authService.logout();
+      if (response.success) {
+        router.replace('/login' as any);
+      } else {
+        showErrorAlert('Gagal logout: ' + response.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error logging out:', error);
+      showErrorAlert(error.message || 'Terjadi kesalahan saat logout');
     }
+  };
+
+  // Helper function untuk menampilkan error alert
+  const showErrorAlert = (message: string) => {
+    setAlertConfig({
+      title: 'Error',
+      message,
+      type: 'error'
+    });
+    setShowAlert(true);
   };
 
   // Render komponen
@@ -125,55 +145,125 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header Profil */}
-        <View style={styles.heroSection}>
+        {/* Header Profil dengan Gradient */}
+        <LinearGradient
+          colors={['#000000', '#1a1a1a']}
+          style={styles.heroSection}
+        >
           <View style={styles.heroContent}>
             <View style={styles.profileSection}>
               <View style={styles.avatarContainer}>
-                <Ionicons name="person-circle" size={80} color="#FFFFFF" />
+                <LinearGradient
+                  colors={['#333333', '#4a4a4a']}
+                  style={styles.avatarGradient}
+                >
+                  <Ionicons name="person" size={40} color="#FFFFFF" />
+                </LinearGradient>
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                </View>
               </View>
               <View style={styles.profileInfo}>
                 <Text style={styles.name}>{user?.name || 'Pengguna'}</Text>
-                <Text style={styles.phone}>{user?.phone || '-'}</Text>
-                <Text style={styles.email}>{user?.email || '-'}</Text>
+                <View style={styles.contactInfo}>
+                  <Ionicons name="call-outline" size={16} color="#CCCCCC" />
+                  <Text style={styles.contactText}>{user?.phone || '-'}</Text>
+                </View>
+                <View style={styles.contactInfo}>
+                  <Ionicons name="mail-outline" size={16} color="#CCCCCC" />
+                  <Text style={styles.contactText}>{user?.email || '-'}</Text>
+                </View>
               </View>
             </View>
           </View>
+        </LinearGradient>
+
+        {/* Statistik dengan Cards */}
+        <View style={styles.statsContainer}>
+          <LinearGradient
+            colors={['#ffffff', '#f8f8f8']}
+            style={styles.statsCard}
+          >
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{orders.length}</Text>
+              <Text style={styles.statLabel}>Total Pesanan</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {orders.filter(order => order.status === 'completed').length}
+              </Text>
+              <Text style={styles.statLabel}>Selesai</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {orders.filter(order => order.status === 'pending').length}
+              </Text>
+              <Text style={styles.statLabel}>Aktif</Text>
+            </View>
+          </LinearGradient>
         </View>
 
-        {/* Statistik */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{orders.length}</Text>
-            <Text style={styles.statLabel}>Total Pesanan</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {orders.filter(order => order.status === 'completed').length}
-            </Text>
-            <Text style={styles.statLabel}>Pesanan Selesai</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {orders.filter(order => order.status === 'pending').length}
-            </Text>
-            <Text style={styles.statLabel}>Pesanan Aktif</Text>
-          </View>
+        {/* Menu Aksi */}
+        <View style={styles.actionMenuContainer}>
+          <TouchableOpacity style={styles.actionMenuItem}>
+            <View style={styles.actionMenuIcon}>
+              <Ionicons name="wallet-outline" size={24} color="#000000" />
+            </View>
+            <View style={styles.actionMenuContent}>
+              <Text style={styles.actionMenuTitle}>Dompet Digital</Text>
+              <Text style={styles.actionMenuSubtitle}>Rp 0</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionMenuItem}>
+            <View style={styles.actionMenuIcon}>
+              <Ionicons name="gift-outline" size={24} color="#000000" />
+            </View>
+            <View style={styles.actionMenuContent}>
+              <Text style={styles.actionMenuTitle}>Reward Points</Text>
+              <Text style={styles.actionMenuSubtitle}>0 pts</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionMenuItem}>
+            <View style={styles.actionMenuIcon}>
+              <Ionicons name="ticket-outline" size={24} color="#000000" />
+            </View>
+            <View style={styles.actionMenuContent}>
+              <Text style={styles.actionMenuTitle}>Voucher Saya</Text>
+              <Text style={styles.actionMenuSubtitle}>0 voucher aktif</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666666" />
+          </TouchableOpacity>
         </View>
 
         {/* Riwayat Pesanan */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Riwayat Pesanan</Text>
-            <TouchableOpacity onPress={() => router.push('/orders' as any)}>
+            <TouchableOpacity 
+              style={styles.seeAllButton}
+              onPress={() => router.push('/orders' as any)}
+            >
               <Text style={styles.seeAllText}>Lihat Semua</Text>
+              <Ionicons name="arrow-forward" size={16} color="#666666" />
             </TouchableOpacity>
           </View>
           
           {orders.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="receipt-outline" size={48} color={colors.textSecondary} />
+              <Ionicons name="receipt-outline" size={48} color="#666666" />
               <Text style={styles.emptyStateText}>Belum ada pesanan</Text>
+              <TouchableOpacity 
+                style={styles.emptyStateButton}
+                onPress={() => router.push('/menu' as any)}
+              >
+                <Text style={styles.emptyStateButtonText}>Mulai Pesan</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.orderList}>
@@ -181,39 +271,51 @@ export default function ProfileScreen() {
                 <TouchableOpacity 
                   key={order.id} 
                   style={styles.orderCard}
-                  onPress={() => router.push('/orders' as any)}
+                  onPress={() => router.push(`/orders/${order.id}` as any)}
                 >
-                  <View style={styles.orderHeader}>
-                    <View style={styles.storeInfo}>
-                      {order.store.logo ? (
-                        <Image 
-                          source={{ uri: order.store.logo }} 
-                          style={styles.storeLogo}
-                        />
-                      ) : (
-                        <Ionicons name="storefront-outline" size={24} color={colors.primary} />
-                      )}
-                      <Text style={styles.storeName}>{order.store.name}</Text>
+                  <LinearGradient
+                    colors={['#ffffff', '#f8f8f8']}
+                    style={styles.orderCardContent}
+                  >
+                    <View style={styles.orderHeader}>
+                      <View style={styles.storeInfo}>
+                        {order.store.logo ? (
+                          <Image 
+                            source={{ uri: order.store.logo }} 
+                            style={styles.storeLogo}
+                          />
+                        ) : (
+                          <View style={styles.storeLogoPlaceholder}>
+                            <Ionicons name="storefront" size={20} color="#000000" />
+                          </View>
+                        )}
+                        <Text style={styles.storeName}>{order.store.name}</Text>
+                      </View>
+                      <View style={[
+                        styles.orderStatusBadge,
+                        { backgroundColor: order.status === 'completed' ? '#E8F5E9' : '#FFF3E0' }
+                      ]}>
+                        <Text style={[
+                          styles.orderStatusText,
+                          { color: order.status === 'completed' ? '#2E7D32' : '#E65100' }
+                        ]}>
+                          {order.status === 'completed' ? 'Selesai' : 'Aktif'}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={[
-                      styles.orderStatus,
-                      { color: order.status === 'completed' ? colors.success : colors.primary }
-                    ]}>
-                      {order.status === 'completed' ? 'Selesai' : 'Aktif'}
-                    </Text>
-                  </View>
-                  <View style={styles.orderDetails}>
-                    <Text style={styles.orderDate}>
-                      {new Date(order.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </Text>
-                    <Text style={styles.orderPrice}>
-                      Rp{order.total_price.toLocaleString('id-ID')}
-                    </Text>
-                  </View>
+                    <View style={styles.orderDetails}>
+                      <Text style={styles.orderDate}>
+                        {new Date(order.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </Text>
+                      <Text style={styles.orderPrice}>
+                        Rp{order.total_price.toLocaleString('id-ID')}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               ))}
             </View>
@@ -225,8 +327,13 @@ export default function ProfileScreen() {
           style={styles.logoutButton} 
           onPress={handleLogout}
         >
-          <Ionicons name="log-out-outline" size={20} color={colors.background} style={styles.logoutIcon} />
-          <Text style={styles.logoutText}>Keluar</Text>
+          <LinearGradient
+            colors={['#ff4b4b', '#ff0000']}
+            style={styles.logoutGradient}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.logoutText}>Keluar</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
@@ -237,15 +344,24 @@ export default function ProfileScreen() {
         onClose={() => setShowLogoutAlert(false)}
         onConfirm={confirmLogout}
       />
+
+      <CustomAlert
+        visible={showAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={() => setShowAlert(false)}
+      />
     </TabLayout>
   );
 }
+
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
@@ -259,132 +375,188 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   heroSection: {
-    backgroundColor: '#000000',
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 30,
   },
   heroContent: {
-    padding: 16,
+    padding: 20,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    position: 'relative',
+    marginRight: 20,
+  },
+  avatarGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 2,
   },
   profileInfo: {
     flex: 1,
   },
   name: {
-    fontSize: 28,
-    fontFamily: 'System',
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  phone: {
-    fontSize: 16,
-    fontFamily: 'System',
-    color: '#CCCCCC',
-    marginBottom: 4,
+  contactInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
-  email: {
+  contactText: {
     fontSize: 14,
-    fontFamily: 'System',
     color: '#CCCCCC',
+    marginLeft: 8,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     padding: 20,
+    marginTop: -25,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
-    marginTop: -20,
-    marginHorizontal: 16,
-    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statItem: {
+    flex: 1,
     alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#EEEEEE',
+    marginHorizontal: 15,
   },
   statNumber: {
     fontSize: 24,
-    fontFamily: 'System',
-    fontWeight: '900',
+    fontWeight: '700',
     color: '#000000',
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 14,
-    fontFamily: 'System',
+    fontSize: 12,
+    color: '#666666',
+  },
+  actionMenuContainer: {
+    padding: 20,
+  },
+  actionMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  actionMenuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  actionMenuContent: {
+    flex: 1,
+  },
+  actionMenuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 2,
+  },
+  actionMenuSubtitle: {
+    fontSize: 13,
     color: '#666666',
   },
   sectionContainer: {
-    padding: 16,
+    padding: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontFamily: 'System',
-    fontWeight: '900',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#000000',
-    letterSpacing: -0.5,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   seeAllText: {
-    fontSize: 15,
-    fontFamily: 'System',
-    fontWeight: '500',
+    fontSize: 14,
     color: '#666666',
-    letterSpacing: 0.2,
+    marginRight: 4,
   },
   emptyState: {
     alignItems: 'center',
-    padding: 32,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+    padding: 30,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 15,
   },
   emptyStateText: {
     fontSize: 16,
-    fontFamily: 'System',
     color: '#666666',
-    marginTop: 8,
+    marginTop: 12,
+    marginBottom: 20,
+  },
+  emptyStateButton: {
+    backgroundColor: '#000000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  emptyStateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   orderList: {
-    gap: 12,
+    gap: 15,
   },
   orderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  orderCardContent: {
+    padding: 15,
   },
   orderHeader: {
     flexDirection: 'row',
@@ -395,100 +567,66 @@ const styles = StyleSheet.create({
   storeInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   storeLogo: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  storeLogoPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   storeName: {
     fontSize: 16,
-    fontFamily: 'System',
     fontWeight: '600',
     color: '#000000',
+    marginLeft: 12,
   },
-  orderStatus: {
-    fontSize: 14,
-    fontFamily: 'System',
-    fontWeight: '500',
+  orderStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  orderStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   orderDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8,
   },
   orderDate: {
-    fontSize: 14,
-    fontFamily: 'System',
+    fontSize: 13,
     color: '#666666',
   },
   orderPrice: {
     fontSize: 16,
-    fontFamily: 'System',
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#000000',
   },
   logoutButton: {
-    margin: 16,
-    backgroundColor: '#F44336',
-    padding: 16,
-    borderRadius: 12,
+    margin: 20,
+    marginBottom: 40,
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  logoutGradient: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-  },
-  logoutIcon: {
-    marginRight: 4,
+    padding: 16,
   },
   logoutText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'System',
     fontWeight: '600',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  navItem: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  activeNavItem: {
-    backgroundColor: '#F5F5F5',
-  },
-  navText: {
-    fontSize: 13,
-    fontFamily: 'System',
-    fontWeight: '500',
-    marginTop: 4,
-    color: '#666666',
-    letterSpacing: 0.2,
-  },
-  activeNavText: {
-    color: '#000000',
-    fontWeight: '600',
+    marginLeft: 8,
   },
 }); 
